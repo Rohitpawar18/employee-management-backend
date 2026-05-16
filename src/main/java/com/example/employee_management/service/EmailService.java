@@ -3,6 +3,7 @@ package com.example.employee_management.service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -20,6 +21,7 @@ public class EmailService {
     }
 
     // Admin mail - new employee added
+    @Async
     public void sendAdminEmployeeAddedEmail(String adminEmail, String employeeName, String department){
         sendEmail(
                 adminEmail,
@@ -34,6 +36,7 @@ public class EmailService {
     }
 
     // Employee Email : welcome email
+    @Async
     public void sendWelcomeEmail(String employeeEmail, String employeeName, String department){
         sendEmail(
                 employeeEmail,
@@ -48,6 +51,7 @@ public class EmailService {
     }
 
     //Admin email : employee deleted
+    @Async
     public void  sendAdminEmployeeDeletedEmail(String adminEmail, String employeeName, String department){
         sendEmail(
                 adminEmail,
@@ -62,6 +66,7 @@ public class EmailService {
     }
 
     // Emloyee email : removal notification
+    @Async
     public void sendEmployeeRemovedEmail(String employeeEmail, String employeeName){
         sendEmail(
                 employeeEmail,
