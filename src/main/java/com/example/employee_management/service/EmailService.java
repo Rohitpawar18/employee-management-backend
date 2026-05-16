@@ -1,81 +1,178 @@
+//package com.example.employee_management.service;
+//
+//import org.springframework.beans.factory.annotation.Autowired;
+//import org.springframework.mail.SimpleMailMessage;
+//import org.springframework.mail.javamail.JavaMailSender;
+//import org.springframework.scheduling.annotation.Async;
+//import org.springframework.stereotype.Service;
+//
+//@Service
+//public class EmailService {
+//
+//    @Autowired
+//    private JavaMailSender mailSender;
+//
+//    private void sendEmail(String toEmail, String subject, String body){
+//        SimpleMailMessage message = new SimpleMailMessage();
+//        message.setTo(toEmail);
+//        message.setSubject(subject);
+//        message.setText(body);
+//        mailSender.send(message);
+//    }
+//
+//    // Admin mail - new employee added
+//    @Async
+//    public void sendAdminEmployeeAddedEmail(String adminEmail, String employeeName, String department){
+//        sendEmail(
+//                adminEmail,
+//                "New Employee Added : "+ employeeName,
+//                "Hello Admin,\n\n"+
+//                "A new employee has been added to the system.\n\n"+
+//                "Employee Name : "+employeeName+"\n"+
+//                "Department    : "+department+"\n\n"+
+//                "Please login to the Employee Management System for more details.\n\n"+
+//                "Regards,\nEmployee Management System"
+//        );
+//    }
+//
+//    // Employee Email : welcome email
+//    @Async
+//    public void sendWelcomeEmail(String employeeEmail, String employeeName, String department){
+//        sendEmail(
+//                employeeEmail,
+//                "Welcome to the Company, "+employeeName+"!",
+//                "Dear "+employeeName+",\n\n"+
+//                "Welcome to company! We are excited to have you on board.\n\n"+
+//                "Your profile has been successfully added to our system.\n\n" +
+//                "Department : " + department + "\n\n" +
+//                "If you have any questions, please contact the HR department.\n\n" +
+//                "Best Regards,\nEmployee Management System"
+//        );
+//    }
+//
+//    //Admin email : employee deleted
+//    @Async
+//    public void  sendAdminEmployeeDeletedEmail(String adminEmail, String employeeName, String department){
+//        sendEmail(
+//                adminEmail,
+//                "Employee Removed : "+employeeName,
+//                "Hello Admin,\n\n"+
+//                "An employee has been removed from the system.\n\n"+
+//                "Employee Name : "+employeeName+"\n"+
+//                "Department    : "+department+"\n\n"+
+//                "Please login to the Employee Management System for more details.\n\n"+
+//                "Regards,\nEmployee Management System"
+//        );
+//    }
+//
+//    // Emloyee email : removal notification
+//    @Async
+//    public void sendEmployeeRemovedEmail(String employeeEmail, String employeeName){
+//        sendEmail(
+//                employeeEmail,
+//                "Your Profile Has Been Removed",
+//                "Dear "+employeeName+",\n\n"+
+//                "We want to inform you that your profile has been removed from our "+
+//                "Employee Management System.\n\n"+
+//                "If you think this is a mistake, please contact the HR department immediately.\n\n"+
+//                "Best Regards,\nEmployee Management System"
+//        );
+//    }
+//}
+
+
 package com.example.employee_management.service;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
+import com.sendgrid.*;
+import com.sendgrid.helpers.mail.Mail;
+import com.sendgrid.helpers.mail.objects.Content;
+import com.sendgrid.helpers.mail.objects.Email;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+
+import java.io.IOException;
 
 @Service
 public class EmailService {
 
-    @Autowired
-    private JavaMailSender mailSender;
+    @Value("${sendgrid.api.key}")
+    private String sendGridApiKey;
 
-    private void sendEmail(String toEmail, String subject, String body){
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setTo(toEmail);
-        message.setSubject(subject);
-        message.setText(body);
-        mailSender.send(message);
+    @Value("${sendgrid.from.email}")
+    private String fromEmail;
+
+    private void sendEmail(String toEmail, String subject, String body) {
+        Email from = new Email(fromEmail);
+        Email to = new Email(toEmail);
+        Content content = new Content("text/plain", body);
+        Mail mail = new Mail(from, subject, to, content);
+
+        SendGrid sg = new SendGrid(sendGridApiKey);
+        Request request = new Request();
+        try {
+            request.setMethod(Method.POST);
+            request.setEndpoint("mail/send");
+            request.setBody(mail.build());
+            Response response = sg.api(request);
+            System.out.println("Email sent! Status: " + response.getStatusCode());
+        } catch (IOException e) {
+            System.out.println("Email sending failed: " + e.getMessage());
+        }
     }
 
-    // Admin mail - new employee added
     @Async
-    public void sendAdminEmployeeAddedEmail(String adminEmail, String employeeName, String department){
+    public void sendAdminEmployeeAddedEmail(String adminEmail, String employeeName, String department) {
         sendEmail(
                 adminEmail,
-                "New Employee Added : "+ employeeName,
-                "Hello Admin,\n\n"+
-                "A new employee has been added to the system.\n\n"+
-                "Employee Name : "+employeeName+"\n"+
-                "Department    : "+department+"\n\n"+
-                "Please login to the Employee Management System for more details.\n\n"+
-                "Regards,\nEmployee Management System"
+                "New Employee Added — " + employeeName,
+                "Hello Admin,\n\n" +
+                        "A new employee has been added to the system.\n\n" +
+                        "Employee Name : " + employeeName + "\n" +
+                        "Department    : " + department + "\n\n" +
+                        "Please login to the Employee Management System for more details.\n\n" +
+                        "Regards,\nEmployee Management System"
         );
     }
 
-    // Employee Email : welcome email
     @Async
-    public void sendWelcomeEmail(String employeeEmail, String employeeName, String department){
+    public void sendWelcomeEmail(String employeeEmail, String employeeName, String department) {
         sendEmail(
                 employeeEmail,
-                "Welcome to the Company, "+employeeName+"!",
-                "Dear "+employeeName+",\n\n"+
-                "Welcome to company! We are excited to have you on board.\n\n"+
-                "Your profile has been successfully added to our system.\n\n" +
-                "Department : " + department + "\n\n" +
-                "If you have any questions, please contact the HR department.\n\n" +
-                "Best Regards,\nEmployee Management System"
+                "Welcome to the Company, " + employeeName + "!",
+                "Dear " + employeeName + ",\n\n" +
+                        "Welcome to the company! We are excited to have you on board.\n\n" +
+                        "Your profile has been successfully added to our system.\n\n" +
+                        "Department : " + department + "\n\n" +
+                        "If you have any questions, please contact the HR department.\n\n" +
+                        "Best Regards,\nEmployee Management System"
         );
     }
 
-    //Admin email : employee deleted
     @Async
-    public void  sendAdminEmployeeDeletedEmail(String adminEmail, String employeeName, String department){
+    public void sendAdminEmployeeDeletedEmail(String adminEmail, String employeeName, String department) {
         sendEmail(
                 adminEmail,
-                "Employee Removed : "+employeeName,
-                "Hello Admin,\n\n"+
-                "An employee has been removed from the system.\n\n"+
-                "Employee Name : "+employeeName+"\n"+
-                "Department    : "+department+"\n\n"+
-                "Please login to the Employee Management System for more details.\n\n"+
-                "Regards,\nEmployee Management System"
+                "Employee Removed — " + employeeName,
+                "Hello Admin,\n\n" +
+                        "An employee has been removed from the system.\n\n" +
+                        "Employee Name : " + employeeName + "\n" +
+                        "Department    : " + department + "\n\n" +
+                        "Please login to the Employee Management System for more details.\n\n" +
+                        "Regards,\nEmployee Management System"
         );
     }
 
-    // Emloyee email : removal notification
     @Async
-    public void sendEmployeeRemovedEmail(String employeeEmail, String employeeName){
+    public void sendEmployeeRemovedEmail(String employeeEmail, String employeeName) {
         sendEmail(
                 employeeEmail,
                 "Your Profile Has Been Removed",
-                "Dear "+employeeName+",\n\n"+
-                "We want to inform you that your profile has been removed from our "+
-                "Employee Management System.\n\n"+
-                "If you think this is a mistake, please contact the HR department immediately.\n\n"+
-                "Best Regards,\nEmployee Management System"
+                "Dear " + employeeName + ",\n\n" +
+                        "We want to inform you that your profile has been removed from our " +
+                        "Employee Management System.\n\n" +
+                        "If you think this is a mistake, please contact the HR department immediately.\n\n" +
+                        "Best Regards,\nEmployee Management System"
         );
     }
 }
