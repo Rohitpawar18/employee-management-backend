@@ -26,24 +26,47 @@ public class AuthController {
     @Value("${admin.password}")
     private String adminPassword;
 
+    @Value("${employee.username}")
+    private String employeeUsername;
+
+    @Value("${employee.password}")
+    private String employeePassword;
+
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody Map<String, String> credentials){
+    public ResponseEntity<?> login(@RequestBody Map<String, String> credentials) {
         String username = credentials.get("username");
         String password = credentials.get("password");
 
-        if(adminUsername.equals(username) && adminPassword.equals(password)){
+        if (adminUsername.equals(username) && adminPassword.equals(password)) {
             String token = jwtUtil.generateToken(username);
             return ResponseEntity.ok(Map.of(
                     "token", token,
                     "username", username,
+                    "role", "ADMIN",
                     "message", "Login Successful"
             ));
         }
+
+        if (employeeUsername.equals(username) && employeePassword.equals(password)) {
+            String token = jwtUtil.generateToken(username);
+            return ResponseEntity.ok(Map.of(
+                    "token", token,
+                    "username", username,
+                    "role", "EMPLOYEE",
+                    "message", "Login Successful"
+            ));
+        }
+
         return ResponseEntity.status(401).body(Map.of("message", "Invalid credentials"));
     }
 
     @GetMapping("/verify")
     public ResponseEntity<?> verify(){
         return ResponseEntity.ok(Map.of("message", "Token is valid"));
+    }
+
+    @GetMapping("/test")
+    public ResponseEntity<?> test(){
+        return ResponseEntity.ok(Map.of("message", "Auth Controller is working"));
     }
 }
